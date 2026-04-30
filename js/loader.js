@@ -9,24 +9,24 @@ async function discoverJsonFiles() {
     const REPO = 'radar-ofertas';
     const FOLDER = 'dados';
 
-    // URL da API de Conteúdos do GitHub
     const url = `https://api.github.com/repos/${USER}/${REPO}/contents/${FOLDER}`;
 
     try {
         const response = await fetch(url);
-        if (!response.ok) throw new Error("Erro ao acessar API do GitHub");
 
-        const files = await response.json();
+        if (response.ok) {
+            const files = await response.json();
+            // Filtra apenas arquivos com extensão .json
+            return files
+                .filter(file => file.name.endsWith('.json'))
+                .map(file => file.name);
+        }
 
-        // Filtra apenas arquivos .json e ignora o index.json (se existir)
-        return files
-            .filter(file => file.name.endsWith('.json') && file.name !== 'index.json')
-            .map(file => file.name);
-
+        console.error("Erro na resposta da API do GitHub:", response.statusText);
     } catch (error) {
-        console.error("Falha na descoberta de arquivos:", error);
-        return [];
+        console.error("Falha na conexão ao descobrir arquivos:", error);
     }
+    return [];
 }
 
 /**
@@ -56,11 +56,11 @@ async function loadContentFromFiles(fileList) {
  * Orquestra a descoberta e o carregamento para o app.js
  */
 export async function fetchAllOffers() {
-    // Passo 1: Descobre quais arquivos existem na pasta
+    // Passo 1: Descobre quais arquivos existem na pasta via API do GitHub
     const jsonFiles = await discoverJsonFiles();
 
     if (jsonFiles.length === 0) return [];
 
-    // Passo 2: Carrega os dados de todos esses arquivos
+    // Passo 2: Carrega os dados de todos esses arquivos localmente
     return await loadContentFromFiles(jsonFiles);
 }
