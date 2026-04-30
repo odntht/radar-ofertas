@@ -5,8 +5,8 @@
  * Busca na API do GitHub a lista de arquivos dentro da pasta /dados
  */
 async function discoverJsonFiles() {
-    const USER = 'seu-usuario-github'; // ⚠️ Altere para seu usuário
-    const REPO = 'nome-do-seu-repositorio'; // ⚠️ Altere para o nome do repo
+    const USER = 'odntht';
+    const REPO = 'radar-ofertas';
     const FOLDER = 'dados';
 
     // URL da API de Conteúdos do GitHub
