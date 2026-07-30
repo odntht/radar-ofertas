@@ -1,6 +1,6 @@
 // js/app.js
 import { fetchAllOffers } from './loader.js';
-import { filtrarOfertas, extrairMercadosUnicos } from './filters.js';
+import { filtrarOfertas, valoresUnicos, contarPorCategoria } from './filters.js';
 
 const { createApp } = Vue;
 
@@ -9,36 +9,49 @@ createApp({
         return {
             itens: [],
             busca: '',
-            filtroMercado: '',
             filtroCategoria: '',
-            ordemAsc: true,
+            filtroCanal: '',
+            filtroLoja: '',
+            ordenarPor: 'data',   // 'data' | 'preco'
+            ordemAsc: false,      // data: false = mais recentes primeiro
+            limite: 60,
             carregando: true
         }
     },
     computed: {
-        // Lista dinâmica de mercados para o select
-        mercados() {
-            return extrairMercadosUnicos(this.itens);
-        },
-        // Lista dinâmica de categorias para o select
-        categorias() {
-            return [...new Set(this.itens.map(i => i.categoria))]
-                .filter(Boolean)
-                .sort();
-        },
-        // Retorna os itens processados pelos filtros e busca
+        categorias() { return valoresUnicos(this.itens, 'categoria'); },
+        canais() { return valoresUnicos(this.itens, 'canal'); },
+        lojas() { return valoresUnicos(this.itens, 'loja'); },
+        contagem() { return contarPorCategoria(this.itens); },
         itensFiltrados() {
             return filtrarOfertas(
-                this.itens,
-                this.busca,
-                this.filtroMercado,
-                this.ordemAsc,
-                this.filtroCategoria
+                this.itens, this.busca, this.filtroCanal, this.filtroLoja,
+                this.filtroCategoria, this.ordenarPor, this.ordemAsc
             );
+        },
+        itensVisiveis() { return this.itensFiltrados.slice(0, this.limite); }
+    },
+    watch: {
+        busca() { this.limite = 60; },
+        filtroCategoria() { this.limite = 60; },
+        filtroCanal() { this.limite = 60; },
+        filtroLoja() { this.limite = 60; }
+    },
+    methods: {
+        setCategoria(c) { this.filtroCategoria = (this.filtroCategoria === c) ? '' : c; },
+        mais() { this.limite += 60; },
+        toggleOrdem() {
+            // alterna: data recente -> preço menor -> preço maior -> data recente
+            if (this.ordenarPor === 'data') { this.ordenarPor = 'preco'; this.ordemAsc = true; }
+            else if (this.ordemAsc) { this.ordemAsc = false; }
+            else { this.ordenarPor = 'data'; this.ordemAsc = false; }
+        },
+        rotuloOrdem() {
+            if (this.ordenarPor === 'data') return 'Mais recentes';
+            return this.ordemAsc ? 'Menor preço' : 'Maior preço';
         }
     },
     async mounted() {
-        // Carrega todos os JSONs da pasta /dados via API do GitHub
         this.itens = await fetchAllOffers();
         this.carregando = false;
     }

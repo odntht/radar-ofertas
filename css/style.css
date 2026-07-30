@@ -28,3 +28,36 @@ body {
     border-radius: 0.5rem;
     text-transform: uppercase;
 }
+
+/* chips de categoria */
+.chip {
+    background: #fff;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.chip:hover {
+    border-color: #3b82f6;
+    color: #1e40af;
+}
+
+.chip-on {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+}
+
+/* recorte de título em 3 linhas */
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 3.6em;
+}

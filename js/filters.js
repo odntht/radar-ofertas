@@ -1,55 +1,57 @@
-// js/filters.js
+// js/filters.js — filtros para ofertas de tech/promo (Telegram)
 
 /**
- * Filtra as ofertas com base em múltiplos critérios
- * Implementa busca em dois níveis: primeiro exata, depois parcial.
+ * Filtra por categoria + canal + loja + busca (título e texto),
+ * e ordena por data (padrão) ou preço.
  */
-export function filtrarOfertas(itens, busca, mercado, ordemAsc, categoria) {
+export function filtrarOfertas(itens, busca, canal, loja, categoria, ordenarPor, ordemAsc) {
     const termo = busca.toLowerCase().trim();
 
-    // 1. Filtros de Categorização (Mercado e Categoria)
-    let baseFiltrada = itens.filter(i => {
-        const matchMercado = mercado === '' || i.mercado === mercado;
-        const matchCategoria = !categoria || i.categoria === categoria;
-        return matchMercado && matchCategoria;
-    });
-
-    // Se não houver termo de busca, retorna apenas os filtros de categoria/mercado
-    if (!termo) {
-        return ordenar(baseFiltrada, ordemAsc);
-    }
-
-    // 2. Busca Nível 1: Exata (Palavra inteira)
-    // \b garante que o termo seja uma palavra isolada (evita Vinho achar Vinha)
-    const regexExata = new RegExp(`\\b${termo}\\b`, 'i');
-    let resultado = baseFiltrada.filter(i =>
-        regexExata.test(i.produto) || regexExata.test(i.marca)
+    let base = itens.filter(i =>
+        (!categoria || i.categoria === categoria) &&
+        (!canal || i.canal === canal) &&
+        (!loja || i.loja === loja)
     );
 
-    // 3. Busca Nível 2: Parcial (Fallback)
-    // Se não encontrou nada com a palavra exata, tenta encontrar o trecho dentro das palavras
-    if (resultado.length === 0) {
-        resultado = baseFiltrada.filter(i =>
-            i.produto.toLowerCase().includes(termo) ||
-            i.marca.toLowerCase().includes(termo)
+    if (termo) {
+        base = base.filter(i =>
+            (i.produto || '').toLowerCase().includes(termo) ||
+            (i.texto || '').toLowerCase().includes(termo)
         );
     }
 
-    return ordenar(resultado, ordemAsc);
+    return ordenar(base, ordenarPor, ordemAsc);
 }
 
-/**
- * Função auxiliar para ordenação por preço
- */
-function ordenar(itens, ordemAsc) {
-    return itens.sort((a, b) => {
-        return ordemAsc ? a.preco - b.preco : b.preco - a.preco;
-    });
+function ordenar(itens, por, asc) {
+    const arr = itens.slice();
+    if (por === 'preco') {
+        // itens sem preço vão sempre pro fim
+        arr.sort((a, b) => {
+            const pa = (a.preco == null) ? Infinity : a.preco;
+            const pb = (b.preco == null) ? Infinity : b.preco;
+            if (pa === Infinity && pb === Infinity) return 0;
+            if (pa === Infinity) return 1;
+            if (pb === Infinity) return -1;
+            return asc ? pa - pb : pb - pa;
+        });
+    } else { // data
+        arr.sort((a, b) => {
+            const da = a.data || '', db = b.data || '';
+            return asc ? (da < db ? -1 : da > db ? 1 : 0) : (da > db ? -1 : da < db ? 1 : 0);
+        });
+    }
+    return arr;
 }
 
-/**
- * Extrai lista de mercados sem repetição
- */
-export function extrairMercadosUnicos(itens) {
-    return [...new Set(itens.map(i => i.mercado))].sort();
+/** Lista de valores únicos de uma chave (ordenada). */
+export function valoresUnicos(itens, chave) {
+    return [...new Set(itens.map(i => i[chave]).filter(Boolean))].sort();
+}
+
+/** Contagem por categoria. */
+export function contarPorCategoria(itens) {
+    const m = {};
+    for (const i of itens) m[i.categoria] = (m[i.categoria] || 0) + 1;
+    return m;
 }
