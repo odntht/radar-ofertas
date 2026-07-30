@@ -82,10 +82,24 @@ createApp({
             this.buscaInput = ''; this.busca = '';
             this.filtroCategoria = ''; this.filtroCanal = ''; this.filtroLoja = '';
             this.precoMinInput = ''; this.precoMaxInput = '';
+        },
+        setupInfiniteScroll() {
+            const el = this.$refs.sentinela;
+            if (!el || this._io) return;
+            this._io = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting && this.itensVisiveis.length < this.itensFiltrados.length) {
+                    this.mais();
+                    // re-arma: se a sentinela continuar visível, dispara de novo até encher a tela
+                    this._io.unobserve(el);
+                    this.$nextTick(() => this._io.observe(el));
+                }
+            }, { rootMargin: '600px 0px' });
+            this._io.observe(el);
         }
     },
     async mounted() {
         this.itens = await fetchAllOffers();
         this.carregando = false;
+        this.$nextTick(() => this.setupInfiniteScroll());
     }
 }).mount('#app');

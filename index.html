@@ -27,8 +27,9 @@
         <div v-if="carregando" class="text-center py-20 text-slate-400">Carregando ofertas…</div>
 
         <template v-else>
-            <!-- Barra: categoria (dropdown com busca) + toggle de filtros -->
-            <section class="mb-4 flex gap-2 items-stretch">
+            <!-- Barra fixa no topo: categoria (dropdown com busca) + filtros -->
+            <div class="sticky top-0 z-30 bg-slate-50 dark:bg-slate-900 -mx-3 px-3 sm:-mx-4 sm:px-4 pt-1 pb-3 mb-4">
+            <section class="flex gap-2 items-stretch">
                 <!-- Dropdown de categoria -->
                 <div class="relative flex-1">
                     <button @click="catOpen = !catOpen"
@@ -123,6 +124,7 @@
                     </button>
                 </section>
             </div>
+            </div>
 
             <!-- Contador -->
             <div class="flex flex-wrap justify-between items-baseline gap-2 text-sm text-slate-400 mb-4">
@@ -167,11 +169,10 @@
                 </a>
             </main>
 
-            <!-- Mostrar mais -->
-            <div v-if="itensFiltrados.length > itensVisiveis.length" class="text-center mt-8">
-                <button @click="mais()" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-bold">
-                    Mostrar mais
-                </button>
+            <!-- Sentinela do infinite scroll -->
+            <div ref="sentinela" class="h-4"></div>
+            <div v-if="itensFiltrados.length > itensVisiveis.length" class="text-center py-6 text-sm text-slate-400">
+                Carregando mais…
             </div>
 
             <!-- Vazio -->
