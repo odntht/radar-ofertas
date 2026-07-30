@@ -45,6 +45,17 @@ body {
     border-radius: 999px;
     transition: all 0.15s ease;
     cursor: pointer;
+    white-space: nowrap;
+    flex: 0 0 auto; /* não encolhe na faixa rolável do mobile */
+}
+
+/* faixa de chips rolável no mobile — esconde a barra de rolagem */
+.chips-scroll {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.chips-scroll::-webkit-scrollbar {
+    display: none;
 }
 
 .chip:hover {
@@ -56,6 +67,13 @@ body {
     background: #2563eb;
     color: #fff;
     border-color: #2563eb;
+}
+
+/* iOS: evita o zoom automático ao focar campos (font-size < 16px dispara o zoom) */
+@media (max-width: 640px) {
+    input, select, textarea {
+        font-size: 16px;
+    }
 }
 
 /* recorte de título em 3 linhas */

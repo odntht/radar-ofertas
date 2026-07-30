@@ -16,7 +16,6 @@ createApp({
             precoMinInput: '',
             precoMaxInput: '',
             ordem: 'data_desc',   // data_desc | data_asc | preco_asc | preco_desc
-            dark: false,
             limite: 60,
             carregando: true
         }
@@ -62,11 +61,7 @@ createApp({
         filtroLoja() { this.limite = 60; },
         precoMinInput() { this.limite = 60; },
         precoMaxInput() { this.limite = 60; },
-        ordem() { this.limite = 60; },
-        dark(v) {
-            document.documentElement.classList.toggle('dark', v);
-            try { localStorage.setItem('dark', v ? '1' : '0'); } catch (e) { /* ignore */ }
-        }
+        ordem() { this.limite = 60; }
     },
     methods: {
         setCategoria(c) { this.filtroCategoria = (this.filtroCategoria === c) ? '' : c; },
@@ -78,7 +73,6 @@ createApp({
         }
     },
     async mounted() {
-        this.dark = document.documentElement.classList.contains('dark');
         this.itens = await fetchAllOffers();
         this.carregando = false;
     }

@@ -9,22 +9,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = { darkMode: 'class' };
-        // aplica o tema salvo antes do render, evitando flash
-        if (localStorage.getItem('dark') === '1') document.documentElement.classList.add('dark');
+        // modo noturno é o padrão do site
+        document.documentElement.classList.add('dark');
     </script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script type="module" src="js/app.js"></script>
 </head>
 
 <body class="bg-slate-50 dark:bg-slate-900 transition-colors">
-    <div id="app" class="max-w-7xl mx-auto px-4 py-8">
-        <header class="relative text-center mb-8">
-            <button @click="dark = !dark" :title="dark ? 'Modo claro' : 'Modo escuro'"
-                class="absolute right-0 top-0 p-2 rounded-lg text-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-500 transition">
-                <span v-if="dark">☀️</span><span v-else>🌙</span>
-            </button>
-            <h1 class="text-4xl font-black text-slate-800 dark:text-slate-100 tracking-tight">RADAR <span class="text-blue-600">OFERTAS</span> — Tech &amp; Promo</h1>
-            <p class="text-slate-500 dark:text-slate-400 mt-2">Ofertas dos canais do Telegram, organizadas por categoria</p>
+    <div id="app" class="max-w-7xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
+        <header class="text-center mb-6 sm:mb-8">
+            <h1 class="text-2xl sm:text-4xl font-black text-slate-100 tracking-tight">RADAR <span class="text-blue-600">OFERTAS</span> — Tech &amp; Promo</h1>
+            <p class="text-slate-400 text-sm sm:text-base mt-1 sm:mt-2">Ofertas dos canais do Telegram, organizadas por categoria</p>
         </header>
 
         <!-- Loading -->
@@ -32,7 +28,7 @@
 
         <template v-else>
             <!-- Chips de categoria (category-first) -->
-            <section class="mb-6 flex flex-wrap gap-2 justify-center">
+            <section class="chips-scroll mb-6 flex gap-2 flex-nowrap overflow-x-auto pb-1 -mx-3 px-3 md:mx-0 md:px-0 md:flex-wrap md:overflow-visible md:justify-center">
                 <button @click="filtroCategoria=''" :class="['chip', filtroCategoria==='' ? 'chip-on' : '']">
                     Todas ({{ itens.length.toLocaleString('pt-BR') }})
                 </button>
@@ -43,7 +39,7 @@
             </section>
 
             <!-- Filtros -->
-            <section class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-4 flex flex-wrap gap-4 items-end">
+            <section class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-4 flex flex-wrap gap-3 sm:gap-4 items-end">
                 <div class="flex-1 min-w-[240px]">
                     <label class="text-xs font-bold text-slate-400 uppercase ml-1">Buscar</label>
                     <input v-model="buscaInput" type="text" placeholder="Ex: DDR4, RTX 4060, Ryzen, filamento…"
@@ -100,10 +96,10 @@
             </div>
 
             <!-- Grid -->
-            <main class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <main class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 <a v-for="item in itensVisiveis" :key="item.canal + item.id_visual" :href="item.link" target="_blank"
-                    rel="noopener" class="card-oferta block">
-                    <div class="p-5">
+                    rel="noopener" class="card-oferta flex flex-col h-full">
+                    <div class="p-5 flex-1">
                         <div class="flex justify-between items-start mb-3 gap-2">
                             <span class="badge">{{ item.categoria }}</span>
                             <span class="text-[10px] font-bold text-slate-400 text-right">{{ item.canal }}</span>
