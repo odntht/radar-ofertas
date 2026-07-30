@@ -1,6 +1,6 @@
 // js/app.js
 import { fetchAllOffers } from './loader.js';
-import { filtrarOfertas, valoresUnicos, contarPorCategoria } from './filters.js';
+import { filtrarOfertas, valoresUnicos, contarPorCategoria, normalize } from './filters.js';
 
 const { createApp } = Vue;
 
@@ -16,6 +16,9 @@ createApp({
             precoMinInput: '',
             precoMaxInput: '',
             ordem: 'data_desc',   // data_desc | data_asc | preco_asc | preco_desc
+            catOpen: false,       // dropdown de categoria aberto?
+            catBusca: '',         // busca dentro do dropdown de categoria
+            filtrosAbertos: false,// painel de filtros expandido?
             limite: 60,
             carregando: true
         }
@@ -25,6 +28,15 @@ createApp({
         canais() { return valoresUnicos(this.itens, 'canal'); },
         lojas() { return valoresUnicos(this.itens, 'loja'); },
         contagem() { return contarPorCategoria(this.itens); },
+        categoriasFiltradas() {
+            const t = normalize(this.catBusca).trim();
+            return t ? this.categorias.filter(c => normalize(c).includes(t)) : this.categorias;
+        },
+        // filtros do painel colapsável (exclui a categoria, que tem controle próprio)
+        filtrosPainelAtivos() {
+            return !!(this.busca || this.filtroCanal || this.filtroLoja ||
+                this.precoMinInput || this.precoMaxInput);
+        },
         ultimaAtualizacao() {
             let mx = '';
             for (const i of this.itens) if (i.data && i.data > mx) mx = i.data;
@@ -64,7 +76,7 @@ createApp({
         ordem() { this.limite = 60; }
     },
     methods: {
-        setCategoria(c) { this.filtroCategoria = (this.filtroCategoria === c) ? '' : c; },
+        selecionarCategoria(c) { this.filtroCategoria = c; this.catOpen = false; this.catBusca = ''; },
         mais() { this.limite += 60; },
         limparFiltros() {
             this.buscaInput = ''; this.busca = '';

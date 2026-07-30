@@ -27,64 +27,102 @@
         <div v-if="carregando" class="text-center py-20 text-slate-400">Carregando ofertas…</div>
 
         <template v-else>
-            <!-- Chips de categoria (category-first) -->
-            <section class="chips-scroll mb-6 flex gap-2 flex-nowrap overflow-x-auto pb-1 -mx-3 px-3 md:mx-0 md:px-0 md:flex-wrap md:overflow-visible md:justify-center">
-                <button @click="filtroCategoria=''" :class="['chip', filtroCategoria==='' ? 'chip-on' : '']">
-                    Todas ({{ itens.length.toLocaleString('pt-BR') }})
-                </button>
-                <button v-for="cat in categorias" :key="cat" @click="setCategoria(cat)"
-                    :class="['chip', filtroCategoria===cat ? 'chip-on' : '']">
-                    {{ cat }} ({{ (contagem[cat] || 0).toLocaleString('pt-BR') }})
+            <!-- Barra: categoria (dropdown com busca) + toggle de filtros -->
+            <section class="mb-4 flex gap-2 items-stretch">
+                <!-- Dropdown de categoria -->
+                <div class="relative flex-1">
+                    <button @click="catOpen = !catOpen"
+                        class="w-full h-full flex items-center justify-between gap-2 px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-left hover:border-blue-500 transition">
+                        <span class="font-bold text-slate-700 dark:text-slate-100 truncate">
+                            {{ filtroCategoria || 'Todas as categorias' }}
+                            <span class="text-slate-400 font-normal">({{ (filtroCategoria ? (contagem[filtroCategoria] || 0) : itens.length).toLocaleString('pt-BR') }})</span>
+                        </span>
+                        <span class="text-slate-400 text-xs transition-transform" :class="catOpen ? 'rotate-180' : ''">▾</span>
+                    </button>
+
+                    <!-- overlay para fechar ao tocar fora -->
+                    <div v-if="catOpen" @click="catOpen = false" class="fixed inset-0 z-40"></div>
+
+                    <!-- painel do dropdown -->
+                    <div v-if="catOpen"
+                        class="absolute z-50 mt-2 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[70vh]">
+                        <div class="p-2 border-b border-slate-100 dark:border-slate-700">
+                            <input v-model="catBusca" type="text" placeholder="Buscar categoria…" autofocus
+                                class="w-full p-2 bg-slate-50 dark:bg-slate-700 dark:text-slate-100 border-none rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="overflow-y-auto py-1">
+                            <button @click="selecionarCategoria('')"
+                                :class="['w-full text-left px-4 py-2 flex justify-between items-center hover:bg-slate-100 dark:hover:bg-slate-700 transition', filtroCategoria === '' ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-700 dark:text-slate-200']">
+                                <span>Todas as categorias</span>
+                                <span class="text-xs text-slate-400">{{ itens.length.toLocaleString('pt-BR') }}</span>
+                            </button>
+                            <button v-for="cat in categoriasFiltradas" :key="cat" @click="selecionarCategoria(cat)"
+                                :class="['w-full text-left px-4 py-2 flex justify-between items-center hover:bg-slate-100 dark:hover:bg-slate-700 transition', filtroCategoria === cat ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-700 dark:text-slate-200']">
+                                <span class="truncate">{{ cat }}</span>
+                                <span class="text-xs text-slate-400 ml-2">{{ (contagem[cat] || 0).toLocaleString('pt-BR') }}</span>
+                            </button>
+                            <p v-if="categoriasFiltradas.length === 0" class="px-4 py-3 text-sm text-slate-400">Nenhuma categoria encontrada.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Toggle do painel de filtros -->
+                <button @click="filtrosAbertos = !filtrosAbertos"
+                    class="relative shrink-0 flex items-center gap-2 px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-slate-100 hover:border-blue-500 transition">
+                    <span>Filtros</span>
+                    <span class="text-slate-400 text-xs transition-transform" :class="filtrosAbertos ? 'rotate-180' : ''">▾</span>
+                    <span v-if="filtrosPainelAtivos" class="absolute -top-1 -right-1 w-3 h-3 bg-blue-600 rounded-full border-2 border-slate-50 dark:border-slate-900"></span>
                 </button>
             </section>
 
-            <!-- Filtros -->
-            <section class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-4 flex flex-wrap gap-3 sm:gap-4 items-end">
-                <div class="flex-1 min-w-[240px]">
-                    <label class="text-xs font-bold text-slate-400 uppercase ml-1">Buscar</label>
-                    <input v-model="buscaInput" type="text" placeholder="Ex: DDR4, RTX 4060, Ryzen, filamento…"
-                        class="w-full mt-1 p-3 bg-slate-50 dark:bg-slate-700 dark:text-slate-100 border-none rounded-xl focus:ring-2 focus:ring-blue-500 transition">
-                </div>
-                <div class="w-full md:w-44">
-                    <label class="text-xs font-bold text-slate-400 uppercase ml-1">Canal</label>
-                    <select v-model="filtroCanal" class="w-full mt-1 p-3 bg-slate-50 dark:bg-slate-700 dark:text-slate-100 border-none rounded-xl focus:ring-2 focus:ring-blue-500">
-                        <option value="">Todos os canais</option>
-                        <option v-for="c in canais" :key="c" :value="c">{{ c }}</option>
-                    </select>
-                </div>
-                <div class="w-full md:w-40">
-                    <label class="text-xs font-bold text-slate-400 uppercase ml-1">Loja</label>
-                    <select v-model="filtroLoja" class="w-full mt-1 p-3 bg-slate-50 dark:bg-slate-700 dark:text-slate-100 border-none rounded-xl focus:ring-2 focus:ring-blue-500">
-                        <option value="">Todas as lojas</option>
-                        <option v-for="l in lojas" :key="l" :value="l">{{ l }}</option>
-                    </select>
-                </div>
-                <div class="w-full md:w-48">
-                    <label class="text-xs font-bold text-slate-400 uppercase ml-1">Ordenar</label>
-                    <select v-model="ordem" class="w-full mt-1 p-3 bg-slate-800 text-white dark:bg-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold text-sm">
-                        <option value="data_desc">Mais recentes</option>
-                        <option value="data_asc">Mais antigas</option>
-                        <option value="preco_asc">Menor preço</option>
-                        <option value="preco_desc">Maior preço</option>
-                    </select>
-                </div>
-            </section>
+            <!-- Painel de filtros colapsável -->
+            <div v-show="filtrosAbertos">
+                <section class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-4 flex flex-wrap gap-3 sm:gap-4 items-end">
+                    <div class="flex-1 min-w-[240px]">
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1">Buscar</label>
+                        <input v-model="buscaInput" type="text" placeholder="Ex: DDR4, RTX 4060, Ryzen, filamento…"
+                            class="w-full mt-1 p-3 bg-slate-50 dark:bg-slate-700 dark:text-slate-100 border-none rounded-xl focus:ring-2 focus:ring-blue-500 transition">
+                    </div>
+                    <div class="w-full md:w-44">
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1">Canal</label>
+                        <select v-model="filtroCanal" class="w-full mt-1 p-3 bg-slate-50 dark:bg-slate-700 dark:text-slate-100 border-none rounded-xl focus:ring-2 focus:ring-blue-500">
+                            <option value="">Todos os canais</option>
+                            <option v-for="c in canais" :key="c" :value="c">{{ c }}</option>
+                        </select>
+                    </div>
+                    <div class="w-full md:w-40">
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1">Loja</label>
+                        <select v-model="filtroLoja" class="w-full mt-1 p-3 bg-slate-50 dark:bg-slate-700 dark:text-slate-100 border-none rounded-xl focus:ring-2 focus:ring-blue-500">
+                            <option value="">Todas as lojas</option>
+                            <option v-for="l in lojas" :key="l" :value="l">{{ l }}</option>
+                        </select>
+                    </div>
+                    <div class="w-full md:w-48">
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1">Ordenar</label>
+                        <select v-model="ordem" class="w-full mt-1 p-3 bg-slate-800 text-white dark:bg-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold text-sm">
+                            <option value="data_desc">Mais recentes</option>
+                            <option value="data_asc">Mais antigas</option>
+                            <option value="preco_asc">Menor preço</option>
+                            <option value="preco_desc">Maior preço</option>
+                        </select>
+                    </div>
+                </section>
 
-            <!-- Filtros de preço -->
-            <section class="mb-6 flex flex-wrap gap-4 items-center text-sm">
-                <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                    <span class="font-bold">R$</span>
-                    <input v-model="precoMinInput" type="number" min="0" placeholder="mín"
-                        class="w-24 p-2 bg-white dark:bg-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500">
-                    <span>—</span>
-                    <input v-model="precoMaxInput" type="number" min="0" placeholder="máx"
-                        class="w-24 p-2 bg-white dark:bg-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500">
-                </div>
-                <button v-if="filtrosAtivos" @click="limparFiltros()"
-                    class="px-3 py-2 text-xs font-bold text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition">
-                    ✕ Limpar filtros
-                </button>
-            </section>
+                <section class="mb-6 flex flex-wrap gap-4 items-center text-sm">
+                    <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                        <span class="font-bold">R$</span>
+                        <input v-model="precoMinInput" type="number" min="0" placeholder="mín"
+                            class="w-24 p-2 bg-white dark:bg-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <span>—</span>
+                        <input v-model="precoMaxInput" type="number" min="0" placeholder="máx"
+                            class="w-24 p-2 bg-white dark:bg-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button v-if="filtrosAtivos" @click="limparFiltros()"
+                        class="px-3 py-2 text-xs font-bold text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                        ✕ Limpar filtros
+                    </button>
+                </section>
+            </div>
 
             <!-- Contador -->
             <div class="flex flex-wrap justify-between items-baseline gap-2 text-sm text-slate-400 mb-4">
