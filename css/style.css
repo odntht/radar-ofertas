@@ -9,7 +9,7 @@ body {
     background: white;
     border-radius: 1.25rem;
     border: 1px solid #e2e8f0;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s, border-color 0.3s, background 0.3s;
     overflow: hidden;
 }
 
@@ -17,6 +17,11 @@ body {
     transform: translateY(-5px);
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
     border-color: #3b82f6;
+}
+
+.card-rodape {
+    background: #f8fafc;
+    border-color: #f1f5f9;
 }
 
 .badge {
@@ -60,4 +65,42 @@ body {
     -webkit-box-orient: vertical;
     overflow: hidden;
     min-height: 3.6em;
+}
+
+/* ---------- Modo escuro ---------- */
+html.dark .card-oferta {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+html.dark .card-oferta:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+html.dark .card-rodape {
+    background: #0f172a;
+    border-color: #334155;
+}
+
+html.dark .badge {
+    background: #1e3a8a;
+    color: #bfdbfe;
+}
+
+html.dark .chip {
+    background: #1e293b;
+    color: #cbd5e1;
+    border-color: #334155;
+}
+
+html.dark .chip:hover {
+    border-color: #3b82f6;
+    color: #bfdbfe;
+}
+
+html.dark .chip-on {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
 }

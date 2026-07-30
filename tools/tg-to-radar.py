@@ -106,6 +106,8 @@ def convert():
             except: continue
             txt=(m.get('text') or '').strip()
             if len(txt)<6: continue  # pula mídia/vazio
+            preco=parse_price(txt)
+            if preco is None: continue  # sem preço = ruído (bom dia, cupom genérico, preço só na imagem)
             i+=1
             link=first_link(txt, uname, m.get('id'))
             cat=classify(txt)
@@ -113,7 +115,7 @@ def convert():
                 'id_visual': i,
                 'produto': title_of(txt) or '(sem título)',
                 'categoria': cat,
-                'preco': parse_price(txt),
+                'preco': preco,
                 'loja': detect_store(txt, link),
                 'canal': canal,
                 'data': (m.get('date') or '')[:10],

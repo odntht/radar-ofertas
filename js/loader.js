@@ -1,66 +1,72 @@
 // js/loader.js
+import { normalize } from './filters.js';
+
+const USER = 'odntht';
+const REPO = 'radar-ofertas';
+const FOLDER = 'dados';
+
+// Fallback: canais conhecidos. Usado quando a API do GitHub falha
+// (rate-limit de 60 req/h por IP, offline, etc.) — assim o site nunca fica vazio.
+const FALLBACK_FILES = [
+    'achadinhos3d.json',
+    'linguicapromocoes.json',
+    'pcdofafapromo.json',
+    'peperaiohardware.json',
+];
 
 /**
- * FUNÇÃO 1: Descoberta (Substitui a necessidade do index.json manual)
- * Busca na API do GitHub a lista de arquivos dentro da pasta /dados
+ * Descobre os arquivos .json em /dados via API do GitHub.
+ * Em caso de falha, cai no FALLBACK_FILES.
  */
 async function discoverJsonFiles() {
-    const USER = 'odntht';
-    const REPO = 'radar-ofertas';
-    const FOLDER = 'dados';
-
     const url = `https://api.github.com/repos/${USER}/${REPO}/contents/${FOLDER}`;
-
     try {
         const response = await fetch(url);
-
         if (response.ok) {
             const files = await response.json();
-            // Filtra apenas arquivos com extensão .json
-            return files
+            const names = files
                 .filter(file => file.name.endsWith('.json'))
                 .map(file => file.name);
+            if (names.length) return names;
+        } else {
+            console.warn('API do GitHub indisponível:', response.status, response.statusText);
         }
-
-        console.error("Erro na resposta da API do GitHub:", response.statusText);
     } catch (error) {
-        console.error("Falha na conexão ao descobrir arquivos:", error);
+        console.warn('Falha ao descobrir arquivos via API, usando fallback:', error);
     }
-    return [];
+    return FALLBACK_FILES;
 }
 
-/**
- * FUNÇÃO 2: Carregamento (Fetch)
- * Recebe uma lista de nomes de arquivos e baixa o conteúdo de cada um
- */
+/** Baixa e concatena o conteúdo de cada arquivo (tolerante a falha por arquivo). */
 async function loadContentFromFiles(fileList) {
-    try {
-        const promises = fileList.map(fileName =>
-            fetch(`./dados/${fileName}`).then(res => {
-                if (!res.ok) throw new Error(`Erro ao baixar ${fileName}`);
-                return res.json();
-            })
-        );
-
-        const results = await Promise.all(promises);
-        return results.flat(); // Une as arrays de todos os arquivos em uma só
-
-    } catch (error) {
-        console.error("Erro no processamento dos arquivos JSON:", error);
-        return [];
-    }
+    const results = await Promise.all(
+        fileList.map(fileName =>
+            fetch(`./${FOLDER}/${fileName}`)
+                .then(res => {
+                    if (!res.ok) throw new Error(`Erro ao baixar ${fileName}`);
+                    return res.json();
+                })
+                .catch(err => {
+                    console.warn(err.message);
+                    return []; // um arquivo quebrado não derruba o resto
+                })
+        )
+    );
+    return results.flat();
 }
 
-/**
- * FUNÇÃO EXPORTADA: O "Cérebro" do Loader
- * Orquestra a descoberta e o carregamento para o app.js
- */
+/** Pré-computa o campo de busca normalizado (`_s`) uma vez, no carregamento. */
+function preparar(itens) {
+    for (const i of itens) {
+        i._s = normalize((i.produto || '') + ' ' + (i.texto || ''));
+    }
+    return itens;
+}
+
+/** Orquestra descoberta + carregamento + preparo. */
 export async function fetchAllOffers() {
-    // Passo 1: Descobre quais arquivos existem na pasta via API do GitHub
     const jsonFiles = await discoverJsonFiles();
-
     if (jsonFiles.length === 0) return [];
-
-    // Passo 2: Carrega os dados de todos esses arquivos localmente
-    return await loadContentFromFiles(jsonFiles);
+    const itens = await loadContentFromFiles(jsonFiles);
+    return preparar(itens);
 }

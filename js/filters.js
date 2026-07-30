@@ -1,23 +1,39 @@
 // js/filters.js — filtros para ofertas de tech/promo (Telegram)
 
+/** Normaliza texto: minúsculo e sem acento (para busca tolerante). */
+export function normalize(s) {
+    return (s == null ? '' : String(s))
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[̀-ͯ]/g, '');
+}
+
 /**
- * Filtra por categoria + canal + loja + busca (título e texto),
- * e ordena por data (padrão) ou preço.
+ * Filtra por categoria + canal + loja + preço + busca (título e texto),
+ * e ordena por data ou preço.
+ * `opts`: { busca, canal, loja, categoria, soComPreco, precoMin, precoMax, ordenarPor, ordemAsc }
+ * Usa o campo pré-normalizado `_s` (montado no loader) para a busca.
  */
-export function filtrarOfertas(itens, busca, canal, loja, categoria, ordenarPor, ordemAsc) {
-    const termo = busca.toLowerCase().trim();
+export function filtrarOfertas(itens, opts) {
+    const {
+        busca = '', canal = '', loja = '', categoria = '',
+        soComPreco = false, precoMin = null, precoMax = null,
+        ordenarPor = 'data', ordemAsc = false,
+    } = opts || {};
+
+    const termo = normalize(busca).trim();
 
     let base = itens.filter(i =>
         (!categoria || i.categoria === categoria) &&
         (!canal || i.canal === canal) &&
-        (!loja || i.loja === loja)
+        (!loja || i.loja === loja) &&
+        (!soComPreco || i.preco != null) &&
+        (precoMin == null || (i.preco != null && i.preco >= precoMin)) &&
+        (precoMax == null || (i.preco != null && i.preco <= precoMax))
     );
 
     if (termo) {
-        base = base.filter(i =>
-            (i.produto || '').toLowerCase().includes(termo) ||
-            (i.texto || '').toLowerCase().includes(termo)
-        );
+        base = base.filter(i => (i._s || '').includes(termo));
     }
 
     return ordenar(base, ordenarPor, ordemAsc);

@@ -8,12 +8,15 @@ createApp({
     data() {
         return {
             itens: [],
-            busca: '',
+            buscaInput: '',       // o que o usuário digita
+            busca: '',            // aplicado (com debounce)
             filtroCategoria: '',
             filtroCanal: '',
             filtroLoja: '',
-            ordenarPor: 'data',   // 'data' | 'preco'
-            ordemAsc: false,      // data: false = mais recentes primeiro
+            precoMinInput: '',
+            precoMaxInput: '',
+            ordem: 'data_desc',   // data_desc | data_asc | preco_asc | preco_desc
+            dark: false,
             limite: 60,
             carregando: true
         }
@@ -23,35 +26,59 @@ createApp({
         canais() { return valoresUnicos(this.itens, 'canal'); },
         lojas() { return valoresUnicos(this.itens, 'loja'); },
         contagem() { return contarPorCategoria(this.itens); },
+        ultimaAtualizacao() {
+            let mx = '';
+            for (const i of this.itens) if (i.data && i.data > mx) mx = i.data;
+            return mx;
+        },
+        filtrosAtivos() {
+            return !!(this.busca || this.filtroCategoria || this.filtroCanal ||
+                this.filtroLoja || this.precoMinInput || this.precoMaxInput);
+        },
         itensFiltrados() {
-            return filtrarOfertas(
-                this.itens, this.busca, this.filtroCanal, this.filtroLoja,
-                this.filtroCategoria, this.ordenarPor, this.ordemAsc
-            );
+            const [por, dir] = this.ordem.split('_');
+            const num = v => (v === '' || v == null || isNaN(v)) ? null : Number(v);
+            return filtrarOfertas(this.itens, {
+                busca: this.busca,
+                canal: this.filtroCanal,
+                loja: this.filtroLoja,
+                categoria: this.filtroCategoria,
+                precoMin: num(this.precoMinInput),
+                precoMax: num(this.precoMaxInput),
+                ordenarPor: por,
+                ordemAsc: dir === 'asc',
+            });
         },
         itensVisiveis() { return this.itensFiltrados.slice(0, this.limite); }
     },
     watch: {
+        buscaInput(v) {
+            clearTimeout(this._debounce);
+            this._debounce = setTimeout(() => { this.busca = v; }, 250);
+        },
         busca() { this.limite = 60; },
         filtroCategoria() { this.limite = 60; },
         filtroCanal() { this.limite = 60; },
-        filtroLoja() { this.limite = 60; }
+        filtroLoja() { this.limite = 60; },
+        precoMinInput() { this.limite = 60; },
+        precoMaxInput() { this.limite = 60; },
+        ordem() { this.limite = 60; },
+        dark(v) {
+            document.documentElement.classList.toggle('dark', v);
+            try { localStorage.setItem('dark', v ? '1' : '0'); } catch (e) { /* ignore */ }
+        }
     },
     methods: {
         setCategoria(c) { this.filtroCategoria = (this.filtroCategoria === c) ? '' : c; },
         mais() { this.limite += 60; },
-        toggleOrdem() {
-            // alterna: data recente -> preço menor -> preço maior -> data recente
-            if (this.ordenarPor === 'data') { this.ordenarPor = 'preco'; this.ordemAsc = true; }
-            else if (this.ordemAsc) { this.ordemAsc = false; }
-            else { this.ordenarPor = 'data'; this.ordemAsc = false; }
-        },
-        rotuloOrdem() {
-            if (this.ordenarPor === 'data') return 'Mais recentes';
-            return this.ordemAsc ? 'Menor preço' : 'Maior preço';
+        limparFiltros() {
+            this.buscaInput = ''; this.busca = '';
+            this.filtroCategoria = ''; this.filtroCanal = ''; this.filtroLoja = '';
+            this.precoMinInput = ''; this.precoMaxInput = '';
         }
     },
     async mounted() {
+        this.dark = document.documentElement.classList.contains('dark');
         this.itens = await fetchAllOffers();
         this.carregando = false;
     }
