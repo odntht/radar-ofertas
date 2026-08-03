@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 # Baixa o historico publico de um canal Telegram via a visao web t.me/s/<canal>.
 # So funciona para canais PUBLICOS (sem login). Pagina com ?before=<id>.
-import sys, re, os, time, json, html, urllib.request
+import sys, re, os, time, json, html, urllib.request, ssl
+
+# Workaround SSL no Windows (certificados incompletos no Python scoop)
+ssl._create_default_https_context = ssl._create_unverified_context
 
 CHANNEL = 'pcdofafapromo'
 MAX = 1200
